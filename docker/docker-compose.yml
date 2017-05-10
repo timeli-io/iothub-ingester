@@ -1,0 +1,47 @@
+################################
+#
+# Template for a docker compose running both
+# IoTHubIngester and a single cassandra instance to
+# track offsets external to the container.
+#
+################################
+
+#
+# Cassandra Container
+# ############################
+cassandra_iothub:
+  image: cassandra:3.1
+  container_name: cassandra_iothub
+  restart: always
+  ports:
+  - "9042:9042"
+  - "9160:9160"
+  labels:
+    io.timeli.description: "Offsets Cassandra Server"
+    io.timeli.service: "cassandra"
+    io.timeli.applications: "cassandra"
+
+#
+# Ingester Container: fill in environment appropriately
+# ############################
+iothubingester:
+  image: timeli/iothubingester:0.5
+  container_name: iothubingester
+  restart: always
+  ports:
+  - "9000:9000"
+  environment:
+    - IOTHUB_NAME=iothub-ehub-timeli-iot-120231-0d993be389
+    - IOTHUB_ENDPOINT=sb://{SOMENAMESPACE}.servicebus.windows.net/
+    - IOTHUB_PARTITIONS={N_PARTITIONS}
+    - IOTHUB_ACCESS_NAME=service
+    - IOTHUB_ACCESS_KEY=ACCESS_KEY
+    - API_DOMAIN=demo.timeli.io
+    - API_CLIENT_ID=00000000-0000-0000-0000-000000000000
+    - API_CLIENT_SECRET={CLIENT_SECRET}
+    - API_USERNAME={USERNAME}
+    - API_PASSWORD={PASSWORD}
+    - MAPPINGS={"myFirstNodeDevice":["e6c78e76-d67a-4ffc-8474-696b0371ec68","test-channel"],"value":"windspeed"}
+    - CASSANDRA_ENDPOINTS=cassandra.local:9042
+  links:
+      - cassandra_iothub:cassandra.local
